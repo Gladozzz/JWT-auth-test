@@ -88,6 +88,7 @@ var DeleteAllTokensOfUser = func(w http.ResponseWriter, r *http.Request) {
 	_, ok := models.CheckLoginForm(lf.Login, lf.Password)
 	if !ok {
 		u.Respond(w, u.Message(false, "Invalid credentials"))
+		return
 	}
 	resp := models.DeleteAllTokenPairsOfUser(*lf)
 	u.Respond(w, resp)
