@@ -12,7 +12,7 @@ import (
 )
 
 type TokenPair struct {
-	UserId string
+	UserId       string
 	AccessUuid   string
 	RefreshUuid  string
 	AccessToken  string
@@ -29,7 +29,7 @@ type TokenForm struct {
 
 //model for db and parsing requests
 type LoginForm struct {
-	Login string
+	Login    string
 	Password string
 }
 
@@ -57,7 +57,7 @@ func CreateToken(userid string) (*TokenPair, *string, error) {
 	atClaims["access_uuid"] = tp.AccessUuid
 	atClaims["user_id"] = userid
 	atClaims["exp"] = tp.AtExpires
-	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	at := jwt.NewWithClaims(jwt.SigningMethodES512, atClaims)
 	atString, err := at.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
 	tp.AccessToken = atString
 	if err != nil {
@@ -68,7 +68,7 @@ func CreateToken(userid string) (*TokenPair, *string, error) {
 	rtClaims["refresh_uuid"] = tp.RefreshUuid
 	rtClaims["user_id"] = userid
 	rtClaims["exp"] = tp.RtExpires
-	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
+	rt := jwt.NewWithClaims(jwt.SigningMethodES512, rtClaims)
 	rtString, err := rt.SignedString([]byte(os.Getenv("REFRESH_SECRET")))
 	rtBytes, _ := bcrypt.GenerateFromPassword([]byte(rtString), bcrypt.DefaultCost)
 	tp.RefreshToken = rtBytes
@@ -128,7 +128,7 @@ func Register(lf *LoginForm) map[string]interface{} {
 	}
 
 	//Put new account to DB
-	if err = GetDB().putAccount(account); err != nil  {
+	if err = GetDB().putAccount(account); err != nil {
 		return u.Message(false, "Failed to create account, connection error.")
 	}
 
@@ -174,7 +174,7 @@ func RefreshTokenPair(rt string) map[string]interface{} {
 		return u.Message(false, "Wrong RefreshToken")
 	}
 	tokens := map[string]string{
-		"access_token":  *at,
+		"access_token": *at,
 	}
 	resp := u.Message(true, "TokenPair was refreshed")
 	resp["tokens"] = tokens

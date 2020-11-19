@@ -151,28 +151,6 @@ func (_db *DB) ValidAccessToken(at string) (*Account, error) {
 		return nil, err
 	}
 	return &result, nil
-
-	//var err error
-	//claims, ok := at.Claims.(jwt.MapClaims)
-	//if ok && at.Valid {
-	//	userId, ok := claims["user_id"].(string)
-	//	if !ok {
-	//		err = errors.New("jwt.Claims is not valid")
-	//		return nil, err
-	//	}
-	//	var collection = db.client.Database("auth").Collection("Accounts")
-	//	var filter = bson.M{"id": userId}
-	//	var result Account
-	//	err := collection.FindOne(context.TODO(), filter).Decode(&result)
-	//	if err != nil {
-	//		log.Println("ValidAccessToken can't find out account with access token: " + at.Raw)
-	//		log.Println(err)
-	//		return nil, err
-	//	}
-	//	return &result, nil
-	//}
-	//err = errors.New("token is not valid")
-	//return nil, err
 }
 
 func (_db *DB) putAccount(ac Account) error {
