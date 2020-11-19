@@ -57,7 +57,7 @@ func CreateToken(userid string) (*TokenPair, *string, error) {
 	atClaims["access_uuid"] = tp.AccessUuid
 	atClaims["user_id"] = userid
 	atClaims["exp"] = tp.AtExpires
-	at := jwt.NewWithClaims(jwt.SigningMethodES512, atClaims)
+	at := jwt.NewWithClaims(jwt.SigningMethodHS512, atClaims)
 	atString, err := at.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
 	tp.AccessToken = atString
 	if err != nil {
@@ -68,7 +68,7 @@ func CreateToken(userid string) (*TokenPair, *string, error) {
 	rtClaims["refresh_uuid"] = tp.RefreshUuid
 	rtClaims["user_id"] = userid
 	rtClaims["exp"] = tp.RtExpires
-	rt := jwt.NewWithClaims(jwt.SigningMethodES512, rtClaims)
+	rt := jwt.NewWithClaims(jwt.SigningMethodHS512, rtClaims)
 	rtString, err := rt.SignedString([]byte(os.Getenv("REFRESH_SECRET")))
 	rtBytes, _ := bcrypt.GenerateFromPassword([]byte(rtString), bcrypt.DefaultCost)
 	tp.RefreshToken = rtBytes
