@@ -61,10 +61,10 @@ var RefreshAuth = func(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-
 type AccessTokenForm struct {
 	AccessToken string `json:"access_token"`
 }
+
 var Logout = func(w http.ResponseWriter, r *http.Request) {
 
 	atf := &AccessTokenForm{}
@@ -84,6 +84,10 @@ var DeleteAllTokensOfUser = func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		u.Respond(w, u.Message(false, "Invalid request"))
 		return
+	}
+	_, ok := models.CheckLoginForm(lf.Login, lf.Password)
+	if !ok {
+		u.Respond(w, u.Message(false, "Invalid credentials"))
 	}
 	resp := models.DeleteAllTokenPairsOfUser(*lf)
 	u.Respond(w, resp)
