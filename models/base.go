@@ -178,7 +178,7 @@ func (_db *DB) ValidAccessToken(at string) (*Account, error) {
 func (_db *DB) putAccount(ac Account) error {
 	var collection = db.client.Database("auth").Collection("Accounts")
 	for i, v := range ac.Tokens {
-		rtHashed, _ := bcrypt.GenerateFromPassword([]byte(v.RefreshToken), bcrypt.DefaultCost)
+		rtHashed, _ := bcrypt.GenerateFromPassword(v.RefreshToken, bcrypt.DefaultCost)
 		ac.Tokens[i].RefreshToken = rtHashed
 	}
 	insertResult, err := collection.InsertOne(context.TODO(), ac)
@@ -213,11 +213,11 @@ type Token struct {
 	jwt.StandardClaims
 }
 
-func getUserIdFromAccessToken(tokenString string) (*string, error) {
-	return getUserIdFromToken(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("ACCESS_SECRET")), nil
-	})
-}
+//func getUserIdFromAccessToken(tokenString string) (*string, error) {
+//	return getUserIdFromToken(tokenString, func(token *jwt.Token) (interface{}, error) {
+//		return []byte(os.Getenv("ACCESS_SECRET")), nil
+//	})
+//}
 func getUserIdFromRefreshToken(tokenString string) (*string, error) {
 	return getUserIdFromToken(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("REFRESH_SECRET")), nil

@@ -15,7 +15,7 @@ import (
 
 type AccessDetails struct {
 	AccessUuid string
-	UserId   uint64
+	UserId     uint64
 }
 
 /*
@@ -43,8 +43,8 @@ func Login(login, password string) map[string]interface{} {
 		return u.Message(false, "Error on server side")
 	}
 	tokens := map[string]string{
-		"access_token": tp.AccessToken,
-		"refresh_token": string(rtEncoded),
+		"access_token":  tp.AccessToken,
+		"refresh_token": rtEncoded,
 	}
 
 	resp := u.Message(true, "Logged In")
@@ -58,7 +58,7 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		notAuth := []string{"/register", "/login", "/logout", "/token/deleteall", "/token/refresh"} //List of endpoints that doesn't require auth
-		requestPath := r.URL.Path	//current request path
+		requestPath := r.URL.Path                                                                   //current request path
 
 		//check if request does not need authentication, serve the request if it doesn't need it
 		for _, value := range notAuth {
