@@ -93,10 +93,10 @@ func (_db *DB) deleteAllTokensFromAccount(lf LoginForm) error {
 	}
 }
 
-func (_db *DB) refreshTokenPair(rt string) (*string, error) {
+func (_db *DB) refreshTokenPair(rt string) (*string, *string, error) {
 	userID, err := getUserIdFromRefreshToken(rt)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var collection = db.client.Database("auth").Collection("Accounts")
 	var filter = bson.M{"id": userID}
@@ -105,39 +105,47 @@ func (_db *DB) refreshTokenPair(rt string) (*string, error) {
 	if err != nil {
 		log.Println("refreshTokenPair err")
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 	for _, token := range result.Tokens {
-		rtHashed := token.RefreshToken
+		rtHashed := token.HashedRefreshToken
 		err = bcrypt.CompareHashAndPassword(rtHashed, []byte(rt))
 		if err == nil {
-			newTP, _, err := CreateToken(result.ID)
+			newTP, atString, rtString, err := CreateToken(result.ID)
 			if err != nil {
 				log.Println("refreshTokenPair err in CreateToken")
-				return nil, err
+				return nil, nil, err
 			}
-			var filter = bson.M{"tokens": bson.M{"$elemMatch": bson.M{"accesstoken": token.AccessToken}}, "id": result.ID}
+			rtHashed, err = bcrypt.GenerateFromPassword(newTP.HashedRefreshToken, bcrypt.DefaultCost)
+			if err != nil {
+				log.Println("refreshTokenPair err in GenerateFromPassword")
+				log.Println(err)
+				return nil, nil, err
+			}
+			var filter = bson.M{"tokens": bson.M{"$elemMatch": bson.M{"accessuuid": token.AccessUuid}}, "id": result.ID}
 			update := bson.D{
 				{"$set", bson.D{
-					{"tokens.$.accesstoken", newTP.AccessToken},
 					{"tokens.$.atexpires", newTP.AtExpires},
 					{"tokens.$.accessuuid", newTP.AccessUuid},
+					{"tokens.$.refreshuuid", newTP.RefreshUuid},
+					{"tokens.$.rtexpires", newTP.RtExpires},
+					{"tokens.$.hashedrefreshtoken", rtHashed},
 				}},
 			}
 			updateResult, err := collection.UpdateOne(context.TODO(), filter, update)
 			if err != nil {
 				log.Println("refreshTokenPair err")
 				log.Println(err)
-				return nil, err
+				return nil, nil, err
 			} else {
 				fmt.Println("refreshTokenPair updated result ", updateResult.UpsertedID)
-				return &newTP.AccessToken, nil
+				return atString, rtString, nil
 			}
 		}
 	}
 	err = errors.New("Can't find account with this refresh token")
 	fmt.Println("refreshTokenPair err", err)
-	return nil, err
+	return nil, nil, err
 }
 
 func (_db *DB) ValidAccessToken(at string) (*Account, error) {
@@ -156,8 +164,8 @@ func (_db *DB) ValidAccessToken(at string) (*Account, error) {
 func (_db *DB) putAccount(ac Account) error {
 	var collection = db.client.Database("auth").Collection("Accounts")
 	for i, v := range ac.Tokens {
-		rtHashed, _ := bcrypt.GenerateFromPassword(v.RefreshToken, bcrypt.DefaultCost)
-		ac.Tokens[i].RefreshToken = rtHashed
+		rtHashed, _ := bcrypt.GenerateFromPassword(v.HashedRefreshToken, bcrypt.DefaultCost)
+		ac.Tokens[i].HashedRefreshToken = rtHashed
 	}
 	insertResult, err := collection.InsertOne(context.TODO(), ac)
 	if err != nil {

@@ -51,7 +51,7 @@ type RefreshTokenForm struct {
 
 var RefreshAuth = func(w http.ResponseWriter, r *http.Request) {
 
-	rtf := &RefreshTokenForm{}
+	rtf := &RefreshTokenForm{}                 // This refresh token is base64 encoded
 	err := json.NewDecoder(r.Body).Decode(rtf) //decode the request body into struct and failed if any error occur
 	if err != nil {
 		u.Respond(w, u.Message(false, "Invalid request"))

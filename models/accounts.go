@@ -12,13 +12,12 @@ import (
 )
 
 type TokenPair struct {
-	UserId       string
-	AccessUuid   string
-	RefreshUuid  string
-	AccessToken  string
-	RefreshToken []byte
-	AtExpires    int64
-	RtExpires    int64
+	UserId             string
+	AccessUuid         string
+	RefreshUuid        string
+	HashedRefreshToken []byte
+	AtExpires          int64
+	RtExpires          int64
 }
 
 //model for db and parsing requests
@@ -41,7 +40,7 @@ type Account struct {
 	Tokens   []TokenPair
 }
 
-func CreateToken(userid string) (*TokenPair, *string, error) {
+func CreateToken(userid string) (*TokenPair, *string, *string, error) {
 	tp := &TokenPair{}
 	tp.UserId = userid
 	tp.AtExpires = time.Now().Add(time.Hour * 24).Unix()
@@ -59,25 +58,27 @@ func CreateToken(userid string) (*TokenPair, *string, error) {
 	atClaims["exp"] = tp.AtExpires
 	at := jwt.NewWithClaims(jwt.SigningMethodHS512, atClaims)
 	atString, err := at.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
-	tp.AccessToken = atString
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	//Creating Refresh Token
 	rtClaims := jwt.MapClaims{}
 	rtClaims["refresh_uuid"] = tp.RefreshUuid
+	atClaims["refresh_uuid"] = tp.RefreshUuid
+	rtClaims["access_uuid"] = tp.AccessUuid
+	rtClaims["access_token"] = tp.AccessUuid
 	rtClaims["user_id"] = userid
 	rtClaims["exp"] = tp.RtExpires
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS512, rtClaims)
 	rtString, err := rt.SignedString([]byte(os.Getenv("REFRESH_SECRET")))
 	rtBytes, _ := bcrypt.GenerateFromPassword([]byte(rtString), bcrypt.DefaultCost)
-	tp.RefreshToken = rtBytes
+	tp.HashedRefreshToken = rtBytes
 	if err != nil {
 		log.Println("CreateToken err")
 		log.Println(err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return tp, &rtString, nil
+	return tp, &atString, &rtString, nil
 }
 
 //Validate incoming user details...
@@ -119,7 +120,7 @@ func Register(lf *LoginForm) map[string]interface{} {
 	account.Password = string(hashedPassword)
 
 	//Create TokenPair
-	tp, rtString, err := CreateToken(account.ID)
+	tp, atString, rtString, err := CreateToken(account.ID)
 	if err != nil {
 		response := u.Message(true, "Some error on server side")
 		return response
@@ -139,7 +140,7 @@ func Register(lf *LoginForm) map[string]interface{} {
 	response := u.Message(true, "Account has been created")
 	response["account"] = account
 	tokens := map[string]string{
-		"access_token":  tp.AccessToken,
+		"access_token":  *atString,
 		"refresh_token": *rtString,
 	}
 	response["tokens"] = tokens
@@ -166,15 +167,16 @@ func RefreshTokenPair(rt string) map[string]interface{} {
 	if err != nil {
 		log.Println("RefreshTokenPair err in DecodeString")
 		log.Println(err)
-		return u.Message(false, "RefreshToken must be an base64 encoded string")
+		return u.Message(false, "HashedRefreshToken must be an base64 encoded string")
 	}
 	//log.Println(string(rtDecoded))
-	at, err := GetDB().refreshTokenPair(string(rtDecoded))
+	at, newRT, err := GetDB().refreshTokenPair(string(rtDecoded))
 	if err != nil {
-		return u.Message(false, "Wrong RefreshToken")
+		return u.Message(false, "Wrong HashedRefreshToken")
 	}
 	tokens := map[string]string{
-		"access_token": *at,
+		"access_token":  *at,
+		"refresh_token": *newRT,
 	}
 	resp := u.Message(true, "TokenPair was refreshed")
 	resp["tokens"] = tokens
