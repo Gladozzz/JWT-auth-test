@@ -36,6 +36,7 @@ func Login(login, password string) map[string]interface{} {
 		log.Println("CreateToken err")
 		return u.Message(false, "Error on server side")
 	}
+	atEncoded := b64.StdEncoding.EncodeToString([]byte(*atString))
 	rtEncoded := b64.StdEncoding.EncodeToString([]byte(*rtString))
 	saveErr := models.SaveTokenPair(*tp)
 	if saveErr != nil {
@@ -43,7 +44,7 @@ func Login(login, password string) map[string]interface{} {
 		return u.Message(false, "Error on server side")
 	}
 	tokens := map[string]string{
-		"access_token":  *atString,
+		"access_token":  atEncoded,
 		"refresh_token": rtEncoded,
 	}
 

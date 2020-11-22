@@ -93,9 +93,9 @@ func (lf *LoginForm) Validate() (map[string]interface{}, bool) {
 
 	//Login must be unique
 	sameLoginAcc, err := GetDB().getAccountByLogin(lf.Login)
-	if err != nil {
-		log.Println("getAccountByLogin err")
-		log.Println(err)
+	if err != nil && err.Error() != "mongo: no documents in result" {
+		log.Println("Validate err in getAccountByLogin")
+		return u.Message(false, "Can't validate, because some error on server side."), false
 	}
 	if sameLoginAcc != nil {
 		return u.Message(false, "Login already in use by another user."), false
@@ -125,6 +125,7 @@ func Register(lf *LoginForm) map[string]interface{} {
 		response := u.Message(true, "Some error on server side")
 		return response
 	} else {
+
 		account.Tokens = append(account.Tokens, *tp)
 	}
 
@@ -139,9 +140,11 @@ func Register(lf *LoginForm) map[string]interface{} {
 
 	response := u.Message(true, "Account has been created")
 	response["account"] = account
+	atEncoded := b64.StdEncoding.EncodeToString([]byte(*atString))
+	rtEncoded := b64.StdEncoding.EncodeToString([]byte(*rtString))
 	tokens := map[string]string{
-		"access_token":  *atString,
-		"refresh_token": *rtString,
+		"access_token":  atEncoded,
+		"refresh_token": rtEncoded,
 	}
 	response["tokens"] = tokens
 	return response

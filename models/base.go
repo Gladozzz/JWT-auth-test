@@ -26,6 +26,8 @@ func (_db *DB) getAccountByUid(uid string) (*Account, error) {
 	var result Account
 	err := collection.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
+		log.Println("getAccountByUid err")
+		log.Println(err)
 		return nil, err
 	} else {
 		return &result, nil
@@ -38,6 +40,8 @@ func (_db *DB) getAccountByLogin(login string) (*Account, error) {
 	var result Account
 	err := collection.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
+		log.Println("getAccountByLogin err")
+		log.Println(err)
 		return nil, err
 	} else {
 		return &result, nil
