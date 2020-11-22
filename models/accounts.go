@@ -173,13 +173,15 @@ func RefreshTokenPair(rt string) map[string]interface{} {
 		return u.Message(false, "HashedRefreshToken must be an base64 encoded string")
 	}
 	//log.Println(string(rtDecoded))
-	at, newRT, err := GetDB().refreshTokenPair(string(rtDecoded))
+	newAT, newRT, err := GetDB().refreshTokenPair(string(rtDecoded))
 	if err != nil {
 		return u.Message(false, "Wrong HashedRefreshToken")
 	}
+	atEncoded := b64.StdEncoding.EncodeToString([]byte(*newAT))
+	rtEncoded := b64.StdEncoding.EncodeToString([]byte(*newRT))
 	tokens := map[string]string{
-		"access_token":  *at,
-		"refresh_token": *newRT,
+		"access_token":  atEncoded,
+		"refresh_token": rtEncoded,
 	}
 	resp := u.Message(true, "TokenPair was refreshed")
 	resp["tokens"] = tokens
