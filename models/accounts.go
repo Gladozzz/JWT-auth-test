@@ -66,7 +66,7 @@ func CreateToken(userid string) (*TokenPair, *string, *string, error) {
 	rtClaims["refresh_uuid"] = tp.RefreshUuid
 	atClaims["refresh_uuid"] = tp.RefreshUuid
 	rtClaims["access_uuid"] = tp.AccessUuid
-	rtClaims["access_token"] = tp.AccessUuid
+	rtClaims["access_token"] = atString
 	rtClaims["user_id"] = userid
 	rtClaims["exp"] = tp.RtExpires
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS512, rtClaims)
