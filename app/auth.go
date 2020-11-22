@@ -31,7 +31,7 @@ func Login(login, password string) map[string]interface{} {
 	if !ok {
 		return u.Message(false, "Please provide valid login details")
 	}
-	tp, rtString, err := models.CreateToken(account.ID)
+	tp, atString, rtString, err := models.CreateToken(account.ID)
 	if err != nil {
 		log.Println("CreateToken err")
 		return u.Message(false, "Error on server side")
@@ -43,7 +43,7 @@ func Login(login, password string) map[string]interface{} {
 		return u.Message(false, "Error on server side")
 	}
 	tokens := map[string]string{
-		"access_token":  tp.AccessToken,
+		"access_token":  *atString,
 		"refresh_token": rtEncoded,
 	}
 
